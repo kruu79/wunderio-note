@@ -12,6 +12,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Component\Routing\Annotation\Route;
 
 class NoteController extends AbstractController
 {
@@ -24,7 +25,7 @@ class NoteController extends AbstractController
 //    }
 
     /**
-     * Send Note as JSON in format { data: { note: { id, title, text, createdAt } } }.
+     * Sends Note as JSON response in format { data: { note: { id, title, text, createdAt } } }.
      *
      * @Route("/note/{id}", name="app_note_show", format="json", methods={"GET"})
      * @param $id
@@ -40,19 +41,19 @@ class NoteController extends AbstractController
 
 
     /**
-     * Create a new Note and send it back in JSON format.
+     * Creates a new Note and sends it back in as JSON response.
      *
      * @Route("/note/add", name="app_note_new", format="json", methods={"POST"})
      * @param Request $request
-     * @param EntityManagerInterface $entityManager
      * @param ValidatorInterface $validator
+     * @param NoteRepository $noteRepository
      * @return JsonResponse
      * @throws \Exception
      */
     public function new(
         Request $request,
-        EntityManagerInterface $entityManager,
-        ValidatorInterface $validator
+        ValidatorInterface $validator,
+        NoteRepository $noteRepository
     ): JsonResponse
     {
         $note = new Note();
@@ -60,12 +61,66 @@ class NoteController extends AbstractController
         $now = new DateTimeImmutable();
         $note->setCreatedAt($now);
 
-        $title = trim($request->request->get('title'));
-        $note->setTitle($title);
+        $this->setNoteTitleAndText($request, $note);
+        $this->validateNote($note, $validator);
+        $noteRepository->add($note);
 
-        $text = trim($request->request->get('text'));
-        $note->setText($text);
+        return $this->noteJsonResponse($note);
+    }
 
+
+    /**
+     * Edits text and title of existing Note and sends it back as JSON response.
+     *
+     * @Route("/note/{id}", name="app_note_edit", format="json", methods={"PUT"})
+     * @param $id
+     * @param NoteRepository $noteRepository
+     * @param Request $request
+     * @param ValidatorInterface $validator
+     * @return JsonResponse
+     */
+    public function edit(
+        $id,
+        NoteRepository $noteRepository,
+        Request $request,
+        ValidatorInterface $validator
+    ): JsonResponse
+    {
+        $note = $this->getNoteByIdOrThrowNotFoundException($id, $noteRepository);
+
+        $this->setNoteTitleAndText($request, $note);
+        $this->validateNote($note, $validator);
+        $noteRepository->add($note);
+
+        return $this->noteJsonResponse($note);
+    }
+
+
+    /**
+     * @param Request $request
+     * @param Note $note
+     */
+    private function setNoteTitleAndText(Request $request, Note $note): void
+    {
+        $title = $request->request->get('title');
+        if ($title !== null) {
+            $note->setTitle(trim($title));
+        }
+
+        $text = $request->request->get('text');
+        if ($text !== null) {
+            $note->setText(trim($text));
+        }
+    }
+
+
+    /**
+     * @param Note $note
+     * @param ValidatorInterface $validator
+     * @throws UnprocessableEntityHttpException if $note has validation error(s)
+     */
+    private function validateNote(Note $note, ValidatorInterface $validator): void
+    {
         $errors = $validator->validate($note);
 
         if (count($errors)) {
@@ -78,12 +133,6 @@ class NoteController extends AbstractController
             $jsonErrorMessage = json_encode($errorArray);
             throw new UnprocessableEntityHttpException($jsonErrorMessage);
         }
-
-
-        $entityManager->persist($note);
-        $entityManager->flush();
-
-        return $this->noteJsonResponse($note);
     }
 
 
@@ -103,11 +152,12 @@ class NoteController extends AbstractController
     /**
      * @param $id
      * @param NoteRepository $noteRepository
+     * @throws NotFoundHttpException if Note with $id does not exist
      * @return Note
      */
-    private function getNoteByIdOrThrowNotFoundException($id, NoteRepository $noteRepository)
+    private function getNoteByIdOrThrowNotFoundException($id, NoteRepository $noteRepository): Note
     {
-        $note = $noteRepository->findOneBy(['id' => $id]);
+        $note = $noteRepository->find($id);
 
         if (! $note) {
             $jsonErrorMessage = json_encode(['id' => 'This note does not exist!']);

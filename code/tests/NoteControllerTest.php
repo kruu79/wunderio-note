@@ -14,6 +14,7 @@ class NoteControllerTest extends WebTestCase
         $this->client = static::createClient();
     }
 
+
     public function test_it_returns_note_in_json_format(): void
     {
         // Defined in AppFixtures.php
@@ -34,6 +35,7 @@ class NoteControllerTest extends WebTestCase
         $this->assertResponseStatusCodeSame(404);
         $this->assertEquals('fail', $this->getResponseStatus());
     }
+
 
     public function test_it_adds_a_new_note()
     {
@@ -79,6 +81,35 @@ class NoteControllerTest extends WebTestCase
     }
 
 
+    public function test_it_edits_existing_note()
+    {
+        $firstNoteId = 1;
+        $editedTitle = 'New Title';
+        $editedText = 'new text';
+
+        $this->client->xmlHttpRequest('PUT', "/note/$firstNoteId", [
+            'title' => $editedTitle,
+            'text' => $editedText
+        ]);
+        $this->assertResponseIsSuccessful();
+
+        $this->requestNote($firstNoteId);
+        $this->assertResponseIsSuccessful();
+        $this->assertEquals($editedTitle, $this->getResponseData()->note->title);
+        $this->assertEquals($editedText, $this->getResponseData()->note->text);
+    }
+
+
+    public function test_it_fails_when_editing_note_with_invalid_input()
+    {
+        $firstNoteId = 1;
+        $this->client->xmlHttpRequest('PUT', "/note/$firstNoteId", [
+            'title' => '',
+            'text' => ''
+        ]);
+
+        $this->assertEquals('fail', $this->getResponseStatus());
+    }
 
 
 

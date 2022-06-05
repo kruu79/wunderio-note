@@ -19,6 +19,18 @@ class NoteRepository extends ServiceEntityRepository
         parent::__construct($registry, Note::class);
     }
 
+    /**
+     * @param Note $entity
+     * @param bool $flush
+     */
+    public function add(Note $entity, bool $flush = true): void
+    {
+        $this->_em->persist($entity);
+        if ($flush) {
+            $this->_em->flush();
+        }
+    }
+
     // /**
     //  * @return Note[] Returns an array of Note objects
     //  */
