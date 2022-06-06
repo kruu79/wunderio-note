@@ -152,14 +152,14 @@ class NoteController extends AbstractController
      */
     private function setNoteTitleAndText(Request $request, Note $note): void
     {
-        $title = $request->request->get('title');
-        if ($title !== null) {
-            $note->setTitle(trim($title));
+        $params = json_decode($request->getContent(), true);
+
+        if (isset($params['title'])) {
+            $note->setTitle(trim($params['title']));
         }
 
-        $text = $request->request->get('text');
-        if ($text !== null) {
-            $note->setText(trim($text));
+        if (isset($params['text'])) {
+            $note->setText(trim($params['text']));
         }
     }
 

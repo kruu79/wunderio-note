@@ -41,10 +41,12 @@ class NoteControllerTest extends WebTestCase
     {
         $title = 'Note Title';
 
-        $this->client->xmlHttpRequest('POST', "/note/add", [
+        $content = json_encode([
             'title' => $title,
             'text' => 'some text'
         ]);
+
+        $this->client->xmlHttpRequest('POST', "/note/add", [], [], [], $content);
         $this->assertResponseIsSuccessful();
 
         $noteId = $this->getResponseData()->note->id;
@@ -72,10 +74,12 @@ class NoteControllerTest extends WebTestCase
      */
     public function test_it_fails_when_trying_to_create_note_with_invalid_input($title, $text)
     {
-        $this->client->xmlHttpRequest('POST', "/note/add", [
+        $content = json_encode([
             'title' => $title,
             'text' => $text
         ]);
+
+        $this->client->xmlHttpRequest('POST', "/note/add", [], [], [], $content);
 
         $this->assertEquals('fail', $this->getResponseStatus());
     }
@@ -178,11 +182,12 @@ class NoteControllerTest extends WebTestCase
      *
      * @param $id
      * @param string $method
-     * @param array $parameters
+     * @param array $contentArray
      */
-    private function noteRequest($id, $method = 'GET', $parameters = []): void
+    private function noteRequest($id, $method = 'GET', $contentArray = array()): void
     {
-        $this->client->xmlHttpRequest($method, "/note/$id", $parameters);
+        $content = json_encode($contentArray);
+        $this->client->xmlHttpRequest($method, "/note/$id", [], [], [], $content);
     }
 
     /**
