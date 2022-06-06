@@ -25,13 +25,13 @@ class AppFixtures extends Fixture
             [
                 'id' => 2,
                 'title' => 'Second Note',
-                'text' => 'The text of the first note.',
+                'text' => 'The text of the second note.',
                 'age_in_days' => 2
             ],
 
             [
                 'title' => 'Third Note',
-                'text' => 'The text of the first note.',
+                'text' => 'The text of the third note.',
                 'age_in_days' => 1,
                 'id' => 3,
             ],

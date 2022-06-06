@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Note;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -18,6 +19,7 @@ class NoteRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Note::class);
     }
+
 
     /**
      * @param Note $entity
@@ -44,32 +46,30 @@ class NoteRepository extends ServiceEntityRepository
         }
     }
 
-    // /**
-    //  * @return Note[] Returns an array of Note objects
-    //  */
-    /*
-    public function findByExampleField($value)
-    {
-        return $this->createQueryBuilder('n')
-            ->andWhere('n.exampleField = :val')
-            ->setParameter('val', $value)
-            ->orderBy('n.id', 'ASC')
-            ->setMaxResults(10)
-            ->getQuery()
-            ->getResult()
-        ;
-    }
-    */
 
-    /*
-    public function findOneBySomeField($value): ?Note
+    /**
+     * Returns an array with Notes.
+     *
+     * @param array $params ['search' => 'query string', 'orderByCreatedAt' => 'ASC'/'DESC', 'limit' => int]
+     * @return Note[]
+     */
+    public function findAllWithParameters(Array $params)
     {
-        return $this->createQueryBuilder('n')
-            ->andWhere('n.exampleField = :val')
-            ->setParameter('val', $value)
-            ->getQuery()
-            ->getOneOrNullResult()
-        ;
+
+        $builder = $this->createQueryBuilder('n');
+
+        if (isset($params['search']))
+            $builder->andWhere('n.text LIKE :search')
+                ->setParameter('search', '%'.$params['search'].'%');
+
+        if (isset($params['orderByCreatedAt']))
+            $builder->orderBy('n.created_at', $params['orderByCreatedAt']);
+
+        if (isset($params['limit']))
+            $builder->setMaxResults($params['limit']);
+
+        return $builder->getQuery()
+            ->getResult();
     }
-    */
+
 }

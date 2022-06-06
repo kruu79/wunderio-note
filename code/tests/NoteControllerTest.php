@@ -126,6 +126,53 @@ class NoteControllerTest extends WebTestCase
     }
 
 
+    public function test_it_returns_all_notes_ordered_by_newest()
+    {
+        // Defined in AppFixtures.php
+        $oldestNoteId = 1;
+        $newestNoteId = 3;
+
+        $this->client->xmlHttpRequest('GET', "/notes");
+
+        $this->assertEquals($newestNoteId, $this->getResponseData()->notes[0]->id);
+        $this->assertEquals($oldestNoteId, end($this->getResponseData()->notes)->id);
+    }
+
+
+    public function test_it_returns_all_notes_ordered_by_oldest()
+    {
+        // Defined in AppFixtures.php
+        $oldestNoteId = 1;
+        $newestNoteId = 3;
+
+        $this->client->xmlHttpRequest('GET', "/notes?sort=oldest");
+
+        $this->assertEquals($oldestNoteId, $this->getResponseData()->notes[0]->id);
+        $this->assertEquals($newestNoteId, end($this->getResponseData()->notes)->id);
+    }
+
+
+    public function test_it_returns_all_notes_limiting_result_count()
+    {
+        $noteCount = 2;
+
+        $this->client->xmlHttpRequest('GET', "/notes?limit=$noteCount");
+
+        $this->assertEquals($noteCount, count($this->getResponseData()->notes));
+    }
+
+
+    public function test_it_returns_all_notes_with_search_term_in_text()
+    {
+        $secondNoteId = 2;
+        $secondNoteTextFragment = 'the second';
+
+        $this->client->xmlHttpRequest('GET', "/notes?search=$secondNoteTextFragment");
+
+        $this->assertEquals($secondNoteId, $this->getResponseData()->notes[0]->id);
+    }
+
+
     /**
      * KernelBrowser $client sends request to retrieve Note with $id.
      *

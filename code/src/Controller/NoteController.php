@@ -5,7 +5,6 @@ namespace App\Controller;
 use App\Entity\Note;
 use App\Repository\NoteRepository;
 use DateTimeImmutable;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -16,13 +15,44 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class NoteController extends AbstractController
 {
-//    #[Route('/notes', name: 'note')]
-//    public function index(): Response
-//    {
-//        return $this->render('note/index.html.twig', [
-//            'controller_name' => 'NoteController',
-//        ]);
-//    }
+    /**
+     * Returns an array of notes as JSON response in { data: { notes: [] } } property.
+     * By default sorts results by createdAt property - newest first.
+     *
+     * Accepts parameters in query string:
+     * sort=oldest to display oldest results first,
+     * limit=int to limit result count,
+     * search=search_query to search for notes with by text property content.
+     *
+     * @Route("/notes", name="app_note_index", methods={"GET"})
+     * @param Request $request
+     * @param NoteRepository $noteRepository
+     * @return JsonResponse
+     */
+    public function index(Request $request, NoteRepository $noteRepository): JsonResponse
+    {
+        $params = [];
+
+        $params['orderByCreatedAt'] = 'DESC'; // default sorting order - newest first
+        if (strtolower($request->query->get('sort') === 'oldest')) {
+            $params['orderByCreatedAt'] = 'ASC';
+        };
+
+        if ($limit = intval($request->query->get('limit'))) {
+            $params['limit'] = $limit;
+        }
+
+        if ($search = trim($request->query->get('search'))) {
+            $params['search'] = $search;
+        }
+
+        $notes = $noteRepository->findAllWithParameters($params);
+
+        return $this->json([
+            'status' => 'success',
+            'data' => ['notes' => $notes]
+        ]);
+    }
 
     /**
      * Sends Note as JSON response in format { data: { note: { id, title, text, createdAt } } }.
@@ -41,7 +71,7 @@ class NoteController extends AbstractController
 
 
     /**
-     * Creates a new Note and sends it back in as JSON response.
+     * Creates a new Note and sends it back as JSON response.
      *
      * @Route("/note/add", name="app_note_new", format="json", methods={"POST"})
      * @param Request $request
