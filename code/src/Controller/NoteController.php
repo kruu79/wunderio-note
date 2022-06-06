@@ -97,6 +97,26 @@ class NoteController extends AbstractController
 
 
     /**
+     * Deletes the Note.
+     *
+     * @Route("/note/{id}", name="app_note_delete", format="json", methods={"DELETE"})
+     * @param $id
+     * @param NoteRepository $noteRepository
+     * @return JsonResponse
+     */
+    public function delete($id, NoteRepository $noteRepository): JsonResponse
+    {
+        $note = $this->getNoteByIdOrThrowNotFoundException($id, $noteRepository);
+        $noteRepository->remove($note);
+
+        return $this->json([
+            'status' => 'success',
+            'data' => null
+        ]);
+    }
+
+
+    /**
      * @param Request $request
      * @param Note $note
      */

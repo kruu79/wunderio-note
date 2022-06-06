@@ -21,7 +21,7 @@ class NoteControllerTest extends WebTestCase
         $firstNoteId = 1;
         $firstNoteTitle = 'First Note';
 
-        $this->requestNote($firstNoteId);
+        $this->noteRequest($firstNoteId);
         $this->assertResponseIsSuccessful();
         $this->assertEquals($firstNoteTitle, $this->getResponseData()->note->title);
     }
@@ -31,7 +31,7 @@ class NoteControllerTest extends WebTestCase
     {
         $nonExistingNoteId = 999;
 
-        $this->requestNote($nonExistingNoteId);
+        $this->noteRequest($nonExistingNoteId);
         $this->assertResponseStatusCodeSame(404);
         $this->assertEquals('fail', $this->getResponseStatus());
     }
@@ -48,7 +48,7 @@ class NoteControllerTest extends WebTestCase
         $this->assertResponseIsSuccessful();
 
         $noteId = $this->getResponseData()->note->id;
-        $this->requestNote($noteId);
+        $this->noteRequest($noteId);
         $this->assertResponseIsSuccessful();
 
         $this->assertEquals($title, $this->getResponseData()->note->title);
@@ -87,13 +87,14 @@ class NoteControllerTest extends WebTestCase
         $editedTitle = 'New Title';
         $editedText = 'new text';
 
-        $this->client->xmlHttpRequest('PUT', "/note/$firstNoteId", [
+        $this->noteRequest($firstNoteId, 'PUT', [
             'title' => $editedTitle,
             'text' => $editedText
         ]);
+
         $this->assertResponseIsSuccessful();
 
-        $this->requestNote($firstNoteId);
+        $this->noteRequest($firstNoteId);
         $this->assertResponseIsSuccessful();
         $this->assertEquals($editedTitle, $this->getResponseData()->note->title);
         $this->assertEquals($editedText, $this->getResponseData()->note->text);
@@ -103,7 +104,8 @@ class NoteControllerTest extends WebTestCase
     public function test_it_fails_when_editing_note_with_invalid_input()
     {
         $firstNoteId = 1;
-        $this->client->xmlHttpRequest('PUT', "/note/$firstNoteId", [
+
+        $this->noteRequest($firstNoteId, 'PUT', [
             'title' => '',
             'text' => ''
         ]);
@@ -112,15 +114,28 @@ class NoteControllerTest extends WebTestCase
     }
 
 
+    public function test_it_can_delete_note(): void
+    {
+        $firstNoteId = 1;
+
+        $this->noteRequest($firstNoteId, 'DELETE');
+        $this->assertResponseIsSuccessful();
+
+        $this->noteRequest($firstNoteId);
+        $this->assertResponseStatusCodeSame(404);
+    }
+
 
     /**
      * KernelBrowser $client sends request to retrieve Note with $id.
      *
      * @param $id
+     * @param string $method
+     * @param array $parameters
      */
-    private function requestNote($id): void
+    private function noteRequest($id, $method = 'GET', $parameters = []): void
     {
-        $this->client->xmlHttpRequest('GET', "/note/$id");
+        $this->client->xmlHttpRequest($method, "/note/$id", $parameters);
     }
 
     /**
